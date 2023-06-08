@@ -17,8 +17,6 @@ import getpass
 import re
 from offset import Version_offset_dict
 
-AESKEY_OFFSET = 0x2FFD590
-WECHAT_VERSION = "3.9.2.23"
 
 class Decrypt_image_info():
     def __init__(self):
