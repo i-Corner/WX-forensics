@@ -22,7 +22,9 @@ TODO: 寻找新版本下登录微信的wxid偏移，修改文件结构
 
 # 参考
 http://eotstxtab.top/2023/05/06/wechat%E8%81%8A%E5%A4%A9%E8%AE%B0%E5%BD%95db%E5%8F%96%E8%AF%81%E8%A7%A3%E5%AF%86/
+
 https://github.com/x1hy9/WeChatUserDB
+
 https://github.com/AdminTest0/SharpWxDump/blob/master/Program.cs
 
 # 开源不易，各位请点个Star⭐
