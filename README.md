@@ -12,7 +12,17 @@ TODO: 寻找新版本下登录微信的wxid偏移，修改文件结构
 #### 在-r -D_B得到解密数据库后，直接运行getHtmlData.py，再打开html文件即可查看
 #### 目前版本为3.9.5.81(64bit操作，旧版本均为32bit操作，old.py为3.9.2.26)，不同版本偏移不同，请看提示进行操作
 
+登陆微信，微信版本最好是3.9.5.81，否则可能出现兼容性问题。
+如果是旧版本微信3.9.2.x，使用old.py。
+使用python main.py -h获取帮助。
+使用python main.py -r -D_B解密数据库，如下图所示。
+![1686324351248](https://github.com/i-Corner/WX-forensics/assets/82853570/de0cc569-d18a-40f6-b145-388be2fd751e)
 
+使用python main.py -r -D_I解密图片，如下图所示。由于没有多线程操作，图片数量大时，耗费时间长，可自行Ctrl+C中断。
+![image](https://github.com/i-Corner/WX-forensics/assets/82853570/aae5a0b7-2158-49d5-b8f3-cf0f50f28b6e)
+使用python getHtmlData.py提取数据，如下图所示。
+![image](https://github.com/i-Corner/WX-forensics/assets/82853570/db907ff3-4645-4f31-82f7-db627522218c)
+执行完上述操作后，打开Wechat.html即可浏览结果。
 
 # 提示
 若无法运行main.py -r命令，请参考pdf寻找当前版本的偏移地址，而AES key地址则需要寻找网上公布的偏移（拥有了一次则可以不断查询新版本的）
