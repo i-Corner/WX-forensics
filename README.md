@@ -29,6 +29,8 @@ https://github.com/AdminTest0/SharpWxDump
 
 https://zhuanlan.zhihu.com/p/130314175
 
+https://www.zetetic.net/sqlcipher/design/
+
 # 开源不易，各位请点个Star⭐，欢迎交流讨论
 
 # 免责声明
