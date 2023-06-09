@@ -18,6 +18,7 @@ import re
 from offset import Version_offset_dict
 
 
+
 class Decrypt_image_info():
     def __init__(self):
         self.pattern_dir = r'\\\d+\-\d+'
@@ -182,7 +183,20 @@ def image_Decode(filepath,Image_decrypt_info):
     except:
         print("wzfl")
 
-
+def get_Img(file_path,wxidc,Image_decrypt_info):
+    #遍历所有wxid
+    #新版微信加密图片存储在MsgAttach，旧版微信加密图片存储在Image
+    store_base_path = [r"\MsgAttach", r"\Image"]
+    for wxid in wxidc:
+        #指定目录为其聊天记录信息的目录
+        for item_path in store_base_path:
+            down_path = file_path + wxid + r"\FileStorage"+item_path
+            for root, dirs, files in os.walk(down_path):
+                for file in files:
+                    if file.endswith(".dat"):
+                        image_Decode(os.path.join(root, file),Image_decrypt_info)
+                    else:
+                        continue
 
 def get_MSG_db(file_path,wxidc,os_name,key,Image_decrypt_info,args):
     '''
@@ -212,16 +226,7 @@ def get_MSG_db(file_path,wxidc,os_name,key,Image_decrypt_info,args):
                         #利用密钥解密单个数据库文件
                         decrypt_msg(os.path.join(root, file),key)
 
-            #新版微信加密图片存储在MsgAttach，旧版微信加密图片存储在Image
-            store_base_path = [r"\MsgAttach", r"\Image"]
-            for item_path in store_base_path:
-                down_path = file_path + wxid + r"\FileStorage"+item_path
-                for root, dirs, files in os.walk(down_path):
-                    for file in files:
-                        if file.endswith(".dat"):
-                            image_Decode(os.path.join(root, file),Image_decrypt_info)
-                        else:
-                            continue
+
 
 
 def get_info(file_path,wxidc,os_name):
@@ -433,9 +438,9 @@ def getuserinfo(p,args) :
     if args.get_RAM:
         #输出读取到的信息
         print('Name :',name)
-        print('account :',account)
-        print('pic:',pic)
-        print('wxid:',wxid)
+        #print('account :',account)
+        #print('pic:',pic)
+        #print('wxid:',wxid)
         #print('area:',area)
         print('Phone :',phone)
         #print('mail :',mail)
@@ -513,29 +518,38 @@ if __name__ == "__main__":
         print("该软件目前仅支持windows，无法支持您的计算机操作系统。")
         exit()
     parser = argparse.ArgumentParser()
-    parser.add_argument("-r","--get_RAM",action='store_true', default=False)
-    parser.add_argument("-d","--get_Disk", action='store_true',default=False)
+    parser.add_argument("-r","--get_RAM",action='store_true', default=False,help="获取微信进程内存中的信息，需登录微信")
+    parser.add_argument("-d","--get_Disk", action='store_true',default=False,help="获取硬盘中的微信信息，可直接使用")
 
-    parser.add_argument("-D","--Decrypt", action='store_true',default=False)
-    parser.add_argument("-M","--MSG_output_dir",  default='./decrypt_DB', type=str)
-    parser.add_argument("-I","--Image_output_dir", default="./WechatImage", type=str)
-    #parser.add_option("-g", "--get_key", action='store_true', dest="get_key", help="仅windows可用,获取以base64编码的key")
+    parser.add_argument("-D_B","--Decrypt_db", action='store_true',default=False,help="尝试利用内存AES Key解密硬盘中所有用户的DataBase，需搭配-r使用")
+    parser.add_argument("-D_I","--Decrypt_image", action='store_true',default=False,help="解密硬盘中所有用户的图片，可直接运行")
+
+    #parser.add_argument("-D","--Database_output_dir",  default='./decrypt_DB', type=str,help="解密的DataBase存放目录，默认为当前py文件同级下的decrypt_DB目录\nexample:-D './decrypt_DB'")
+    #parser.add_argument("-I","--Image_output_dir", default="./WechatImage", type=str,help="解密的图片存放目录，默认为当前py文件统计下的WechatImage目录\nexample:-I './WechatImage'")
+
     args = parser.parse_args()
 
     p = pymem.Pymem()
     p.open_process_from_name("WeChat.exe")
-    if args.get_RAM and not args.Decrypt:
+    Image_decrypt = Decrypt_image_info()
+    if args.get_RAM and not args.Decrypt_db:
         base_offset, aesKey = getuserinfo(p,args)
-    if args.Decrypt and args.get_RAM:
+    if args.Decrypt_db and not args.get_RAM:
+        print("请搭配-r获取内存中的AES Key使用")
+        exit()
+    if args.Decrypt_db and args.get_RAM:
         base_offset, aesKey = getuserinfo(p, args)
         password = bytes.fromhex(aesKey)
         file_path, wxid_list = get_wxid_list()
-        # print("此机器共有" + str(len(wxid_list)) + "个账号登录过")
-        # print(wxid_list)
+        print("此机器共有" + str(len(wxid_list)) + "个账号登录过")
+        print(wxid_list)
         Image_decrypt = Decrypt_image_info()
         get_MSG_db(file_path,wxid_list,os_name,password,Image_decrypt,args)
-        for wxid in wxid_list:
-            get_info(file_path, wxid, os_name)
+        # for wxid in wxid_list:
+        #    get_info(file_path, wxid, os_name)
+    if args.Decrypt_image:
+        file_path, wxid_list = get_wxid_list()
+        get_Img(file_path,wxid_list,Image_decrypt)
     if args.get_Disk:
         file_path, wxid_list = get_wxid_list()
         print("此机器共有" + str(len(wxid_list)) + "个账号登录过")
