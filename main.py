@@ -15,6 +15,8 @@ import argparse
 import os
 import getpass
 import re
+from offset import Version_offset_dict
+
 
 
 class Decrypt_image_info():
@@ -48,7 +50,7 @@ def check_wxid_version(raw_info):
 
 def get_wxid_list():
     '''
-    通过注册表读取PC微信安装的有关信息（wxid,安装保存位置，版本信息等）
+    通过注册表读取PC微信安装的有关信息（安装保存位置，版本信息等）
     :param os_name:
     :return:
     '''
@@ -105,7 +107,8 @@ def get_wxid_list():
         #print(file_path)
     else:
         # 若保存wx文件夹注册表键不为MyDocument，则此时已更改默认存储位置，键的值即为资料位置
-        file_path = value + "\\WeChat Files\\"
+        file_path = value
+
     # 获取用户文件
     try:
         wxid_list = os.listdir(file_path)
@@ -115,15 +118,14 @@ def get_wxid_list():
         # 去除小程序相关文件夹
         wxid_list.remove("WMPF")
     except:
-        print("\n无法利用脚本直接读取你的wx路径")
-        print("请输入你的[WeChat Files]路径")
-        print("你可以从你微信的设置中查找")
-        print("Example [x:\\\\xxx\\xxx\\WeChat Files]")
-        file_path = input("路径为 : ") + "\\"
+        print("\nfailed to find the path by the script")
+        print("Please enter the path of your [WeChat Files]")
+        print("You can find the path in your WeChat's setting")
+        print("It looks like [x:\\\\xxx\\xxx\\WeChat Files]")
+        file_path = input("The path : ") + "\\"
         wxid_list = os.listdir(file_path)
         wxid_list.remove("All Users")
         wxid_list.remove("Applet")
-        wxid_list.remove("WMPF")
     return file_path,wxid_list
 
 
@@ -158,61 +160,28 @@ def get_filetype(filepath,Image_decrypt_info): #计算加密码和图片类型
 def image_Decode(filepath,Image_decrypt_info):
     dat = open(filepath,"rb")
     outpath = "./WechatImage"
-    timedir = re.findall(Image_decrypt_info.pattern_dir,filepath)  #保存图片的日期文件夹
-    outpath += timedir[0].replace('-','_')
-    if not os.path.exists(outpath):
-        os.makedirs(outpath)
-    out_name = re.findall(Image_decrypt_info.pattern_name,filepath)    #文件名
-    outpath += "\\"+out_name[0]
-    pho_info = get_filetype(filepath,Image_decrypt_info)
-    out_name = out_name[0].strip("\\") + pho_info[1]
-    outpath += pho_info[1]
-    pic = open(outpath, "wb")
-    Image_decrypt_info.decoded_image.append(out_name)
-    code = pho_info[0]
-    for now in dat:
-        for nowByte in now:
-            newByte = nowByte ^ code    #解密码
-            pic.write(bytes([newByte]))
-    print(f"已解密图片:{out_name}")
-    dat.close()
-    pic.close()
-
-
-
-
-def get_decrypt_db(file_path,wxidc,key):
-    '''
-    递归解锁某一目录下所有db文件
-    :param file_path:  计算机中存储所有wxid资料的位置
-    :param wxidc:      wxid_list
-    :param key:        前面通过偏移计算所得的密钥
-    :return:
-    '''
-
-    #遍历所有wxid
-    for wxid in wxidc:
-        # 指定目录为其聊天记录信息的目录
-        down_path = file_path + wxid + "\Msg"
-        # flag用来确定key是否能解密当前wxid下的database
-        flag = False
-        # 遍历Msg文件夹内所有文件
-        for root, dirs, files in os.walk(down_path):
-            # 获取文件所属目录
-            for file in files:
-                # 搜索所有数据库文件
-                if file.endswith('.db'):
-                    #print(os.path.join(root, file))
-                    #xInfo.db数据库未被加密，可直接查看，故需跳过
-                    if os.path.join(root, file).endswith('xInfo.db'):
-                        continue
-                    #利用密钥解密单个数据库文件
-                    flag = decrypt_db(os.path.join(root, file),key)
-                    if not flag:
-                        break
-
-            if not flag:
-                break
+    try:
+        timedir = re.findall(Image_decrypt_info.pattern_dir,filepath)  #保存图片的日期文件夹
+        outpath += timedir[0]
+        if not os.path.exists(outpath):
+            os.makedirs(outpath)
+        out_name = re.findall(Image_decrypt_info.pattern_name,filepath)    #文件名
+        outpath += "\\"+out_name[0]
+        pho_info = get_filetype(filepath,Image_decrypt_info)
+        out_name = out_name[0].strip("\\") + pho_info[1]
+        outpath += pho_info[1]
+        pic = open(outpath, "wb")
+        Image_decrypt_info.decoded_image.append(out_name)
+        code = pho_info[0]
+        for now in dat:
+            for nowByte in now:
+                newByte = nowByte ^ code    #解密码
+                pic.write(bytes([newByte]))
+        print(f"已解密图片:{out_name}")
+        dat.close()
+        pic.close()
+    except:
+        print("wzfl")
 
 def get_Img(file_path,wxidc,Image_decrypt_info):
     #遍历所有wxid
@@ -229,23 +198,54 @@ def get_Img(file_path,wxidc,Image_decrypt_info):
                     else:
                         continue
 
+def get_MSG_db(file_path,wxidc,os_name,key,Image_decrypt_info,args):
+    '''
+    递归解锁某一目录下所有db文件
+    :param file_path:  计算机中存储所有wxid资料的位置
+    :param wxidc:      wxid_list
+    :param os_name:    操作系统名称
+    :param key:        前面通过偏移计算所得的密钥
+    :return:
+    '''
+    if os_name == "windows":
+        #遍历所有wxid
+        for wxid in wxidc:
+            #指定目录为其聊天记录信息的目录
+            down_path = file_path + wxid + "\Msg"
+            #遍历Msg文件夹内所有文件
+            for root, dirs, files in os.walk(down_path):
+                flag = 1
+                # 获取文件所属目录
+                for file in files:
+                    # 搜索所有数据库文件
+                    if file.endswith('.db'):
+                        #print(os.path.join(root, file))
+                        #xInfo.db数据库未被加密，可直接查看，故需跳过
+                        if os.path.join(root, file).endswith('xInfo.db'):
+                            continue
+                        #利用密钥解密单个数据库文件
+                        decrypt_msg(os.path.join(root, file),key)
 
-def get_file_info(file_path,wxidc):
+
+
+
+def get_info(file_path,wxidc,os_name):
     '''
     由上述注册表所得的wx路径，继续深入挖掘用户信息
     :param file_path:
     :param wxidc:
+    :param os_name:
     :return:
     '''
     #一个wxid文件下的/config/accinfo.dat蕴含部分用户信息
-
-    file = file_path + wxidc + "\\config\\AccInfo.dat"
-    try:
-        file_size = os.path.getsize(file)
-    except:
-        print(wxidc+"为失效文件夹")
-        print()
-        return
+    if os_name == "windows":
+        file = file_path + wxidc + "\\config\\AccInfo.dat"
+        try:
+            file_size = os.path.getsize(file)
+        except:
+            print(wxidc+"为失效文件夹")
+            print()
+            return
     if file_size == 0:
         return
 
@@ -366,7 +366,7 @@ def get_file_info(file_path,wxidc):
                         print()
 
 
-def getuserinfo(p) :
+def getuserinfo(p,args) :
     '''
     :param p:   pymem内存指针
     :return:
@@ -379,55 +379,76 @@ def getuserinfo(p) :
         exit()
     # 用户名字。测试时发现，名字若含中文之类的文字则为指针，纯英文字符则为直接地址
     try:
-        name = p.read_string(base_address + 0x3ACB7B8)
+        name = p.read_string(base_address + 0x2FFF5D0)
     except:
-        name = p.read_bytes(base_address + 0x3ACB7B8,8)
-        name = bytearray(name)
-        name.reverse()
-        name = bytes(name)
-        name = binascii.b2a_hex(name)
-        name = int(name, 16)
+        name = p.read_bytes(base_address + 0x2FFF5D0,4)
+        name = struct.unpack("<I", name)[0]
         name = p.read_string(name)
+    else:
+        print("读取用户名错误")
 
-    #account = p.read_bytes(base_address + 0x2FFF970,4)
-    #account = struct.unpack("<I", account)[0]
-    #account = p.read_string(account)
+    try:
+        account = p.read_string(base_address + 0x2FFF970)
+    except:
+        account = p.read_bytes(base_address + 0x2FFF970,4)
+        account = struct.unpack("<I", account)[0]
+        account = p.read_string(account)
+    else:
+        print("读取微信号错误")
 
-
+    try:
+        wxid = p.read_bytes(base_address + 0x2FFF988,4)
+        wxid = struct.unpack("<I", wxid)[0]
+        wxid = p.read_string(wxid)
+    except:
+        print("读取wxid错误")
 
     #area = p.read_bytes(base_address + 0x20F936B8,0x10)
     #area = str(area,'utf-16')
-    # 用户头像，但在动态链接库基址偏移下记录的为其指针，故需读取两次
-    #pic = p.read_bytes(base_address + 0x3042F54,4)
-    #pic = struct.unpack("<I", pic)[0]
-    #pic = p.read_string(pic)
-    #pic = p.read_string(hex(pic))
 
-    # 用户手机号
-    phone = p.read_string(base_address + 0x3ACB6F8)
-    #mail = p.read_string(base_address + 0x2FFD970)
+    try:
+        # 用户头像，但在动态链接库基址偏移下记录的为其指针，故需读取两次
+        pic = p.read_bytes(base_address + 0x3042F54,4)
+        pic = struct.unpack("<I", pic)[0]
+        pic = p.read_string(pic)
+        #pic = p.read_string(hex(pic))
+    except:
+        print("读取头像url错误")
 
-    # 用户个人的AES解密密钥，基址固定偏移记录真值的为内存指针，两次读取
-    key_addr = p.read_bytes(base_address + 0x3ACBCB0,8)
-    temp = bytearray(key_addr)
-    temp.reverse()
-    key_addr = bytes(temp)
-    key_addr = binascii.b2a_hex(key_addr)
-    key_addr =int(key_addr,16)
-    aeskey = p.read_bytes(key_addr, 0x20)
+    try:
+        # 用户手机号
+        phone = p.read_string(base_address + 0x2FFF540)
+        #mail = p.read_string(base_address + 0x2FFD970)
+    except:
+        print("读取手机号错误")
 
-    # 将读取到的aeskey从bytes转换成hex
-    result = binascii.b2a_hex(aeskey)
+    try:
+        # 用户个人的AES解密密钥，基址固定偏移记录真值的为内存指针，两次读取
+        key_addr = p.read_bytes(base_address + 0x2FFF94C,4)
+        #print(key_addr)
+        #print(struct.unpack("<I", key_addr))
+        key_addr = struct.unpack("<I", key_addr)[0]
+        #print(hex(key_addr))
+        aeskey = p.read_bytes(key_addr, 0x20)
+        # 将读取到的aeskey从bytes转换成hex
+        result = binascii.b2a_hex(aeskey)
+    except:
+        print("读取AesKey错误,无法操作与数据库相关操作")
 
-
-    #输出读取到的信息
-    print('Name :',name)
-    print('Phone :',phone)
-    print(f"数据库密钥为：{result.decode()}")
+    if args.get_RAM:
+        #输出读取到的信息
+        print('Name :',name)
+        #print('account :',account)
+        #print('pic:',pic)
+        #print('wxid:',wxid)
+        #print('area:',area)
+        print('Phone :',phone)
+        #print('mail :',mail)
+        print(f"数据库密钥为：{result.decode()}")
 
     return base_address, result.decode()
 
-def decrypt_db(path, password):
+def decrypt_msg(path, password):
     '''
     利用密钥解锁单个数据库文件
     :param path:        一个需要解密数据库文件的绝对路径
@@ -469,13 +490,13 @@ def decrypt_db(path, password):
 
     # 与认证码校验
     if hash_mac.digest() != page1[-32:-12]:
-        print("密钥解密当前wxid错误，尝试下一个wxid")
-        return False
-        
+        raise RuntimeError("密码错误,请检查你的db文件或密钥")
+
     # 往后的页均是4048字节长度的加密数据段和48字节的保留段，4048+48=4096
     pages = [blist[i:i+DEFAULT_PAGESIZE] for i in range(DEFAULT_PAGESIZE, len(blist), DEFAULT_PAGESIZE)]
     # 补回第一页
     pages.insert(0, page1)
+    #print(path.split("\\")[-1])
     new_path = './decrypt_DB/'+path.split('\\')[-1]
     if not os.path.exists('./decrypt_DB'):
         os.makedirs('./decrypt_DB')
@@ -488,7 +509,7 @@ def decrypt_db(path, password):
             f.write(t.decrypt(i[:-48]))
             f.write(i[-48:])
         print(f"已解密数据库:{new_path}")
-    return True
+
 
 
 if __name__ == "__main__":
@@ -503,25 +524,29 @@ if __name__ == "__main__":
     parser.add_argument("-D_B","--Decrypt_db", action='store_true',default=False,help="尝试利用内存AES Key解密硬盘中所有用户的DataBase，需搭配-r使用")
     parser.add_argument("-D_I","--Decrypt_image", action='store_true',default=False,help="解密硬盘中所有用户的图片，可直接运行")
 
-    parser.add_argument("-D","--Database_output_dir",  default='./decrypt_DB', type=str,help="解密的DataBase存放目录，默认为当前py文件同级下的decrypt_DB目录\nexample:-D './decrypt_DB'")
-    parser.add_argument("-I","--Image_output_dir", default="./WechatImage", type=str,help="解密的图片存放目录，默认为当前py文件统计下的WechatImage目录\nexample:-I './WechatImage'")
+    #parser.add_argument("-D","--Database_output_dir",  default='./decrypt_DB', type=str,help="解密的DataBase存放目录，默认为当前py文件同级下的decrypt_DB目录\nexample:-D './decrypt_DB'")
+    #parser.add_argument("-I","--Image_output_dir", default="./WechatImage", type=str,help="解密的图片存放目录，默认为当前py文件统计下的WechatImage目录\nexample:-I './WechatImage'")
+
     args = parser.parse_args()
 
     p = pymem.Pymem()
     p.open_process_from_name("WeChat.exe")
     Image_decrypt = Decrypt_image_info()
     if args.get_RAM and not args.Decrypt_db:
-        base_offset, aesKey = getuserinfo(p)
+        base_offset, aesKey = getuserinfo(p,args)
     if args.Decrypt_db and not args.get_RAM:
         print("请搭配-r获取内存中的AES Key使用")
         exit()
     if args.Decrypt_db and args.get_RAM:
-        base_offset, aesKey = getuserinfo(p)
+        base_offset, aesKey = getuserinfo(p, args)
         password = bytes.fromhex(aesKey)
         file_path, wxid_list = get_wxid_list()
         print("此机器共有" + str(len(wxid_list)) + "个账号登录过")
         print(wxid_list)
-        get_decrypt_db(file_path,wxid_list,password)
+        Image_decrypt = Decrypt_image_info()
+        get_MSG_db(file_path,wxid_list,os_name,password,Image_decrypt,args)
+        # for wxid in wxid_list:
+        #    get_info(file_path, wxid, os_name)
     if args.Decrypt_image:
         file_path, wxid_list = get_wxid_list()
         get_Img(file_path,wxid_list,Image_decrypt)
@@ -529,3 +554,6 @@ if __name__ == "__main__":
         file_path, wxid_list = get_wxid_list()
         print("此机器共有" + str(len(wxid_list)) + "个账号登录过")
         print(wxid_list)
+        for item in wxid_list:
+            get_info(file_path,item,os_name)
+    # decrypt_msg(path,password)
