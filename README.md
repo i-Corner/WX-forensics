@@ -25,7 +25,7 @@ http://eotstxtab.top/2023/05/06/wechat%E8%81%8A%E5%A4%A9%E8%AE%B0%E5%BD%95db%E5%
 
 https://github.com/x1hy9/WeChatUserDB
 
-https://github.com/AdminTest0/SharpWxDump/blob/master/Program.cs
+https://github.com/AdminTest0/SharpWxDump
 
 # 开源不易，各位请点个Star⭐
 
