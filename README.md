@@ -5,10 +5,11 @@
 
 TODO: 寻找新版本下登录微信的wxid偏移，修改文件结构
 
+
 # 使用
-
+### Main.py(old.py)
 ![image](https://github.com/i-Corner/WX-forensics/assets/80880063/aec8ea11-082f-49ff-9ff2-b7aeb15e3a58)
-
+#### 在得到解密数据库后，直接运行getHtmlData.py，再打开html文件即可查看
 # 免责声明
 本项目仅允许在授权情况下对数据库进行备份，严禁用于非法目的，否则自行承担所有相关责任。
 使用该工具则代表默认同意该条款;
