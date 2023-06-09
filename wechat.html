@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+	<title>Wechat</title>
+	<meta charset="UTF-8">
+	<link rel="stylesheet" href="static/css/jquery.treeview.css" />
+	<link rel="stylesheet" href="static/css/mycss.css">
+	<script type="text/javascript" src="static/js/jquery-3.6.0.min.js"></script>
+	<script type="text/javascript" src="static/js/jquery.treeview.js"></script>
+	<script type="text/javascript" src="json/wxid_info.js"></script>
+	<script type="text/javascript" src="json/msg.js"></script>
+	
+	</head>
+	<body>
+
+	<div class="container">
+		<div class="left">
+			<ul id="navigation" class="filetree treeview-famfamfam" style="font-family:'Microsoft Yahei'">
+				<li><span class="folder" id="Wechat">Wechat</span>
+					<ul>
+						<li class="closed"><span class="folder">Friend</span>
+							<ul id="Friend">
+								
+							</ul>
+						</li>
+						<li class="closed"><span class="folder">Group</span>
+							<ul id="Group">
+								
+							</ul>
+						</li>
+						<li class="closed"><span class="folder">Public</span>
+							<ul id="Public">
+								
+							</ul>
+						</li>
+						
+					</ul>
+				</li>
+			</ul>
+		</div>
+		
+		<div class="middle hide">
+			<div id="detail">
+			</div>
+		</div>
+		
+		<div class="right hide">
+			<div id="brief">
+				<h2>概要</h2>
+				<ul>
+					<li>微信wxid<span id='wxid' style='margin:5%'></span></li>
+					<li>微信昵称<span id='nicheng' style='margin:5%'></span></li>
+					<li>我的备注<span id='beizhu' style='margin:5%'></span></li>
+					<li>消息数量<span id='count' style='margin:5%'></span></li>
+				</ul>
+			</div>
+		</div>
+
+		
+	</div>
+	
+<script type="text/javascript">
+	function addItem(id,name, levelID) {
+		var branches = $(
+			"<li><span class='file' id="+id+">"+name+"</span></li>"
+			).appendTo(levelID);
+		$(levelID).treeview({
+			add: branches
+		});
+	}
+
+	
+	$(document).ready(function(){
+		$("#navigation").treeview({
+			toggle: function() {
+				console.log("%s was toggled.", $(this).find(">span").text());
+			}
+		});
+		console.log(wxid_info)
+		for(var ID in wxid_info){
+		  name = wxid_info[ID][0];
+		  if(wxid_info[ID][1]!='')
+			name = wxid_info[ID][1];
+		  if(name=='')
+			name = '未知';
+		  if(ID.endsWith("@chatroom")){
+			addItem(ID,name,"#Group");
+		  }
+		  else if(ID.startsWith("gh_")){
+			addItem(ID,name,"#Public");
+		  }
+		  else
+		  {
+			addItem(ID,name,"#Friend");
+		  }
+		}
+		
+		$('.file').bind('click',function(){
+			var id = $(this).attr('id');
+			appendText(id);
+			$("#wxid").text(id)
+			$("#nicheng").text(wxid_info[id][0])
+			$("#beizhu").text(wxid_info[id][1])
+			if(msg[id])
+				$("#count").text(msg[id].length)
+			else
+				$("#count").text("")
+			$(".right").css('visibility','visible')
+			$(".middle").css('visibility','visible')
+		});
+		
+		
+		
+	});
+</script>
+	
+	
+<script>
+	last_msg_time = 0;
+	console.log(msg)
+	function checkTime(msg_time){
+		dt = msg_time - last_msg_time;
+		if(Math.abs(dt) >= 300){
+			showTime = new Date(msg_time * 1000).toLocaleString().replace(/:\d{1,2}$/,' ');
+			$("#detail").append(
+				$('<div/>', {'class': 'chat-notice'}).append(
+					$('<span/>', {text: showTime})
+				)
+			);
+		}
+		last_msg_time = msg_time;
+	}
+	
+	
+	
+	function appendText(ID){
+		last_msg_time = 0;
+		message = msg[ID]
+		$("#detail").empty();
+		if(message == undefined){
+			$("#detail").append($('<h1/>', {text: "No message"}));
+			return;
+		}
+		len = 5000	// 只显示5000条
+		if(len>message.length)
+			len = message.length;
+		for (let i = 0; i < len; i++) {
+			msgType = message[i][0];
+			isSend = message[i][1];
+			msg_time = message[i][2];
+			content = message[i][3];
+			name = wxid_info[ID][1]
+			if(wxid_info[ID][0]!='')
+				name = wxid_info[ID][0]
+			ImgSrc = wxid_info[ID][2];
+			if(msgType == 1){
+				checkTime(msg_time);
+				if(isSend){
+					$("#detail").append(
+						$('<div/>', {'class': 'chat-receiver'}).append(
+							$('<div/>').append(
+								$('<img/>', {'src': 'static/css/images/avatar.webp'})
+							)
+						)
+						.append(
+							$('<div/>', {text: "Me"})
+						)
+						.append(
+							$('<div/>').append(
+								$('<div/>', {'class':'chat-right_triangle'})
+							)
+							.append($('<span/>', {text: content}))
+						)
+					);	
+				}
+				else{
+					$("#detail").append(
+						$('<div/>', {'class': 'chat-sender'}).append(
+							$('<div/>').append(
+								$('<img/>', {'src': ImgSrc})
+							)
+						)
+						.append(
+							$('<div/>', {text: name})
+						)
+						.append(
+							$('<div/>').append(
+								$('<div/>', {'class':'chat-left_triangle'})
+							)
+							.append($('<span/>', {text: content}))
+						)
+					);	
+				}
+			}
+		}
+	}
+</script>
+</body></html>
