@@ -9,7 +9,7 @@ TODO: 寻找新版本下登录微信的wxid偏移，修改文件结构
 # 使用
 ### Main.py(old.py)
 ![image](https://github.com/i-Corner/WX-forensics/assets/80880063/b73fa3ae-4fc1-4151-8dd9-90568b06bf81)
-#### 在得到解密数据库后，直接运行getHtmlData.py，再打开html文件即可查看
+#### 在-r -D_B得到解密数据库后，直接运行getHtmlData.py，再打开html文件即可查看
 #### 目前版本为3.9.5.81(64bit操作，旧版本均为32bit操作)，不同版本偏移不同，请看提示进行操作
 
 
