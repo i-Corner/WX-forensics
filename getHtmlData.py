@@ -59,6 +59,7 @@ def get_MSGdb_list():
             if file.endswith('.db'):
                 if file.startswith("MSG"):
                     msg_db_list.append(file)
+    sorted(msg_db_list)
     return msg_db_list
     
 def dump_json(save_path, json_name, data):
