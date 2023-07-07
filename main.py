@@ -521,7 +521,7 @@ if __name__ == "__main__":
         file_path, wxid_list = get_wxid_list()
         print("此机器共有" + str(len(wxid_list)) + "个账号登录过")
         print(wxid_list)
-        get_decrypt_db(file_path,wxid_list,password,args)
+        get_decrypt_db(file_path,wxid_list,password)
     if args.Decrypt_image:
         file_path, wxid_list = get_wxid_list()
         get_Img(file_path,wxid_list,Image_decrypt)
